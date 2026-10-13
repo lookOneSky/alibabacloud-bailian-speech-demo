@@ -1,0 +1,5 @@
+dashscope==1.27.7
+pyaudio==0.2.14
+imageio-ffmpeg==0.6.0
+gradio==6.30.0
+python-dotenv==1.2.4

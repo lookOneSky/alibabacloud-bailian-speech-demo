@@ -29,7 +29,8 @@ def arguments() -> argparse.Namespace:
     text_group.add_argument("--text", help="直接指定要合成的文字")
     text_group.add_argument("--text-file", type=Path, default=HERE / "文案.txt", help="UTF-8 文案文件")
     parser.add_argument("--name", default="玄岳门_武炎炎", help="输出文件名，不含扩展名")
-    parser.add_argument("--model", help="复刻和合成使用的同一个模型，默认读取根目录 .env")
+    parser.add_argument("--model", default="qwen-audio-3.0-tts-plus",
+                        help="复刻和合成使用的同一个模型，默认 qwen-audio-3.0-tts-plus")
     parser.add_argument("--instruction", default="", help="可选的说话风格指令；默认沿用参考音频风格")
     parser.add_argument("--rate", type=float, default=1.0, help="语速，默认 1.0")
     parser.add_argument("--prompt-seconds", type=float, default=15.0,
@@ -42,7 +43,7 @@ def read_config() -> dict:
     from dotenv import dotenv_values
 
     config = {key: value for key, value in dotenv_values(ROOT / ".env").items() if value is not None}
-    for key in ("DASHSCOPE_API_KEY", "TTS_MODEL", "NETWORK_PROXY", "NO_PROXY",
+    for key in ("DASHSCOPE_API_KEY", "NETWORK_PROXY", "NO_PROXY",
                 "DASHSCOPE_HTTP_URL", "DASHSCOPE_WEBSOCKET_URL"):
         if os.environ.get(key):
             config[key] = os.environ[key]
@@ -276,7 +277,7 @@ def main() -> int:
             raise ValueError("语速需在 0.5～2.0 之间。")
         if not 3.0 <= args.prompt_seconds <= 30.0:
             raise ValueError("参考音色提取时长需在 3～30 秒之间。")
-        model = args.model or config.get("TTS_MODEL", "qwen-audio-3.1-tts-flash")
+        model = args.model
         print(f"参考录音：{reference}（{info['duration_seconds']} 秒）", flush=True)
         print(f"模型：{model}\n文案：{text}", flush=True)
         if args.check:

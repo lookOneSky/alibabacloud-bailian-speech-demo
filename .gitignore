@@ -1,4 +1,11 @@
 .DS_Store
+.venv/
+.env
+voices.json
+.voices.json.tmp
+.local-cache/
+audio-results/
+local-logs/
 __pycache__
 *.class
 .qoder
