@@ -1,0 +1,6 @@
+{
+  "model": "qwen-audio-3.0-tts-plus",
+  "instruction": "",
+  "rate": 1.0,
+  "prompt_seconds": 15.0
+}

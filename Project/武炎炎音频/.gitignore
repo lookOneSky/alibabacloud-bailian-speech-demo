@@ -4,5 +4,6 @@
 !/Audio/*.wav
 *.mp3
 *.json
+!voice.json
 *.tmp
 __pycache__/

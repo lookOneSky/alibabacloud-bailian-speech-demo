@@ -1,0 +1,9 @@
+.cache/
+.voice-cache.json
+*.wav
+!/Audio/*.wav
+*.mp3
+*.json
+!voice.json
+*.tmp
+__pycache__/
