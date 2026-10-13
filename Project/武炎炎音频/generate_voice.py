@@ -18,13 +18,14 @@ from urllib.parse import urlsplit, urlunsplit
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
-DEFAULT_REFERENCE = Path(r"D:\CodeAll\VRSpace_AIO_WuDang\Audio\石殿配音_武炎炎.wav")
+DEFAULT_REFERENCE = Path("Audio") / "石殿配音_武炎炎.wav"
 CACHE_FILE = HERE / ".voice-cache.json"
 
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE, help="参考 WAV 录音")
+    parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE,
+                        help="参考 WAV 录音，相对路径以本脚本目录为基准")
     text_group = parser.add_mutually_exclusive_group()
     text_group.add_argument("--text", help="直接指定要合成的文字")
     text_group.add_argument("--text-file", type=Path, default=HERE / "文案.txt", help="UTF-8 文案文件")
@@ -66,6 +67,13 @@ def save_json(path: Path, data: dict) -> None:
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
+
+
+def reference_path(path: Path) -> str:
+    try:
+        return path.relative_to(HERE).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def audio_info(path_or_bytes: Path | bytes) -> dict:
@@ -231,13 +239,14 @@ def get_voice(client: BailianClient, config: dict, model: str, reference: Path,
             voice_id = payload["output"].get("voice_id")
             if not isinstance(voice_id, str) or not voice_id:
                 raise RuntimeError("未返回音色 ID；下次启动会先尝试恢复云端记录。")
-        record = {"voice_id": voice_id, "model": model, "reference": str(reference),
+        record = {"voice_id": voice_id, "model": model, "reference": reference_path(reference),
                   "reference_sha256": reference_hash, "max_prompt_audio_length": prompt_seconds,
                   "created_at": datetime.now().astimezone().isoformat()}
         cache[identity] = record
         save_json(CACHE_FILE, cache)
     else:
         print("正在复用已保存的武炎炎音色……", flush=True)
+    record["reference"] = reference_path(reference)
     deadline = time.monotonic() + 120
     while True:
         output = client.call({"action": "query_voice", "voice_id": voice_id})["output"]
@@ -263,7 +272,7 @@ def main() -> int:
     try:
         if not key:
             raise ValueError("请先在项目根目录 .env 中配置 DASHSCOPE_API_KEY。")
-        reference = args.reference.resolve()
+        reference = (args.reference if args.reference.is_absolute() else HERE / args.reference).resolve()
         info = audio_info(reference)
         if not 5 <= info["duration_seconds"] <= 60 or reference.stat().st_size > 10 * 1024 * 1024:
             raise ValueError("参考录音需为 5～60 秒、10 MB 以内的 PCM WAV。")
@@ -308,7 +317,7 @@ def main() -> int:
         transcode(wav_path, mp3_path)
         save_json(HERE / f"{stem}.json", {
             "text": text, "model": model, "voice_id": voice_id,
-            "reference": str(reference), "instruction": args.instruction,
+            "reference": reference_path(reference), "instruction": args.instruction,
             "speech_rate": args.rate, "request_id": request_id, "usage": usage,
             "synthesis_mode": "http_non_streaming", "max_prompt_audio_length": args.prompt_seconds,
             "created_at": datetime.now().astimezone().isoformat(), **generated_info,

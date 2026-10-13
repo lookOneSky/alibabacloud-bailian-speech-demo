@@ -1,6 +1,7 @@
 .cache/
 .voice-cache.json
 *.wav
+!/Audio/*.wav
 *.mp3
 *.json
 *.tmp
